@@ -46,7 +46,11 @@ func (pr *ProxyConnection) ConnectRemote() (err error) {
 		tcpConn.SetKeepAlivePeriod(2 * time.Second)
 	}
 	if pr.Scheme == "https" {
-		remoteConn = tls.Client(remoteConn, &tls.Config{InsecureSkipVerify: true, ServerName: pr.Host})
+		host, _, err := net.SplitHostPort(pr.Host)
+		if err != nil {
+			log.Println("Error parsing host and port, expect the unexpected", err)
+		}
+		remoteConn = tls.Client(remoteConn, &tls.Config{InsecureSkipVerify: true, ServerName: host})
 		err = remoteConn.(*tls.Conn).Handshake()
 		if err != nil {
 			return err
@@ -83,7 +87,7 @@ func (pr *ProxyConnection) DoReq() (err error) {
 		return err
 	}
 	for _, authMethod := range resp.Header.Values("Www-Authenticate") {
-		if authMethod == "NTLM" {
+		if authMethod == "NTLM" || os.Getenv("FORCE_NTLM") == "yes" {
 			log.Printf("%s : Proposing NTLM, forcing ANONYMOUS auth", pr.HttpRequest.URL.String())
 			// Discarding current resp body, we are not authed anyway
 			io.Copy(io.Discard, resp.Body)
@@ -96,6 +100,7 @@ func (pr *ProxyConnection) DoReq() (err error) {
 			if err != nil {
 				return err
 			}
+			break
 		}
 	}
 	// Start replying to our client
