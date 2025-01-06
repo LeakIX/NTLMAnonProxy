@@ -2,6 +2,12 @@
 
 This proxy intercepts HTTP/HTTPS connections and upgrades NTLM connection with ANONYMOUS credentials.
 
+## Install
+
+```bash
+$ go install github.com/LeakIX/NTLMAnonProxy@latest
+```
+
 ## SSL/TLS Interception
 
 The proxy will use the provided `key.pem` and `cert.pem` in the current directory for all connections, and do MITM.
